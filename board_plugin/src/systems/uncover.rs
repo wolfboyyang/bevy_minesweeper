@@ -1,6 +1,6 @@
-use crate::components::{Coordinates, Uncover, Bomb, BombNeighbor};
+use crate::components::{Bomb, BombNeighbor, Coordinates, Uncover};
 use crate::events::TileTriggerEvent;
-use crate::{Board};
+use crate::Board;
 use bevy::log;
 use bevy::prelude::*;
 

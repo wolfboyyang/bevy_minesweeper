@@ -1,4 +1,5 @@
-use crate::components::{Bomb, BombNeighbor, Coordinates};
+use crate::components::{Bomb, BombNeighbor, Coordinates, Uncover};
+use crate::events::TileTriggerEvent;
 use crate::resources::tile::Tile;
 use crate::tile_map::TileMap;
 use bevy::log;
@@ -7,7 +8,6 @@ use bevy::text::Text2dSize;
 pub use bounds::*;
 pub use resources::*;
 use std::collections::HashMap;
-use crate::events::TileTriggerEvent;
 
 mod bounds;
 pub mod components;
@@ -86,6 +86,7 @@ impl BoardPlugin {
 
         let mut covered_tiles =
             HashMap::with_capacity((tile_map.width() * tile_map.height()).into());
+        let mut safe_start = None;
         commands
             .spawn()
             .insert(Name::new("Board"))
@@ -112,8 +113,14 @@ impl BoardPlugin {
                     covered_tile_material,
                     font,
                     &mut covered_tiles,
+                    &mut safe_start,
                 );
             });
+        if options.safe_start {
+            if let Some(entity) = safe_start {
+                commands.entity(entity).insert(Uncover {});
+            }
+        }
         // We add the main resource of the game, the board
         commands.insert_resource(Board {
             tile_map,
@@ -136,6 +143,7 @@ impl BoardPlugin {
         covered_tile_material: Handle<ColorMaterial>,
         font: Handle<Font>,
         covered_tiles: &mut HashMap<Coordinates, Entity>,
+        safe_start_entity: &mut Option<Entity>,
     ) {
         // Tiles
         for (y, line) in tile_map.iter().enumerate() {
@@ -145,6 +153,8 @@ impl BoardPlugin {
                     y: y as u16,
                 };
                 let mut cmd = parent.spawn();
+                let mut covered_tile_entity = None;
+                // Tile sprite
                 cmd.insert_bundle(SpriteBundle {
                     sprite: Sprite::new(Vec2::splat(size - padding)),
                     material: material.clone(),
@@ -155,14 +165,32 @@ impl BoardPlugin {
                     ),
                     ..Default::default()
                 })
+                // Tile name
                 .insert(Name::new(format!("Tile ({}, {})", x, y)))
-                .insert(coordinates);
+                // Tile coordinates
+                .insert(coordinates)
+                // Children
+                .with_children(|parent| {
+                    let mut child_cmd = parent.spawn();
+                    // Tile cover
+                    covered_tile_entity = Some(
+                        child_cmd
+                            .insert_bundle(SpriteBundle {
+                                sprite: Sprite::new(Vec2::splat(size - padding)),
+                                transform: Transform::from_xyz(0., 0., 2.),
+                                material: covered_tile_material.clone(),
+                                ..Default::default()
+                            })
+                            .id(),
+                    );
+                    covered_tiles.insert(coordinates, covered_tile_entity.unwrap());
+                });
                 match tile {
                     // If the tile is a bomb we add the matching component and a sprite child
                     Tile::Bomb => {
                         cmd.insert(Bomb {});
-                        cmd.with_children(|parent| {
-                            parent.spawn_bundle(SpriteBundle {
+                        cmd.with_children(|child_cmd| {
+                            child_cmd.spawn_bundle(SpriteBundle {
                                 sprite: Sprite::new(Vec2::splat(size - padding)),
                                 transform: Transform::from_xyz(0., 0., 1.),
                                 material: bomb_material.clone(),
@@ -173,28 +201,20 @@ impl BoardPlugin {
                     // If the tile is a bomb neighbour we add the matching component and a text child
                     Tile::BombNeighbor(v) => {
                         cmd.insert(BombNeighbor { count: *v });
-                        cmd.with_children(|parent| {
-                            parent.spawn_bundle(Self::bomb_count_text_bundle(
+                        cmd.with_children(|child_cmd| {
+                            child_cmd.spawn_bundle(Self::bomb_count_text_bundle(
                                 *v,
                                 font.clone(),
                                 size - padding,
                             ));
                         });
                     }
-                    Tile::Empty => (),
+                    Tile::Empty => {
+                        if safe_start_entity.is_none() {
+                            *safe_start_entity = covered_tile_entity
+                        }
+                    }
                 }
-                // We add the cover sprites
-                cmd.with_children(|parent| {
-                    let entity = parent
-                        .spawn_bundle(SpriteBundle {
-                            sprite: Sprite::new(Vec2::splat(size - padding)),
-                            transform: Transform::from_xyz(0., 0., 2.),
-                            material: covered_tile_material.clone(),
-                            ..Default::default()
-                        })
-                        .id();
-                    covered_tiles.insert(coordinates, entity);
-                });
             }
         }
     }

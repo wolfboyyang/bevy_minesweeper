@@ -8,6 +8,8 @@ use bevy::text::Text2dSize;
 pub use bounds::*;
 pub use resources::*;
 use std::collections::HashMap;
+use std::fmt::Debug;
+use std::hash::Hash;
 
 mod bounds;
 pub mod components;
@@ -15,19 +17,37 @@ pub mod events;
 mod resources;
 mod systems;
 
-pub struct BoardPlugin {}
+pub struct BoardPlugin<T> {
+    pub running_state: T,
+}
 
-impl Plugin for BoardPlugin {
+impl<T: 'static + Debug + Clone + Eq + PartialEq + Hash + Send + Sync> Plugin for BoardPlugin<T> {
     fn build(&self, app: &mut AppBuilder) {
-        app.add_startup_system(Self::create_board.system())
-            .add_system(systems::input::input_handling.system())
-            .add_system(systems::uncover::trigger_event_handler.system())
-            .add_system(systems::uncover::uncover_tiles.system())
-            .add_event::<TileTriggerEvent>();
+        // When the running states comes into the stack we load a board
+        app.add_system_set(
+            SystemSet::on_enter(self.running_state.clone())
+                .with_system(Self::create_board.system()),
+        )
+        // We handle input and trigger events only if the state is active
+        .add_system_set(
+            SystemSet::on_update(self.running_state.clone())
+                .with_system(systems::input::input_handling.system())
+                .with_system(systems::uncover::trigger_event_handler.system()),
+        )
+        // We handle uncovering even if the state is inactive
+        .add_system_set(
+            SystemSet::on_in_stack_update(self.running_state.clone())
+                .with_system(systems::uncover::uncover_tiles.system()),
+        )
+        .add_system_set(
+            SystemSet::on_exit(self.running_state.clone())
+                .with_system(Self::cleanup_board.system()),
+        )
+        .add_event::<TileTriggerEvent>();
     }
 }
 
-impl BoardPlugin {
+impl<T> BoardPlugin<T> {
     /// System to generate the complete board
     pub fn create_board(
         mut commands: Commands,
@@ -38,10 +58,7 @@ impl BoardPlugin {
     ) {
         let options = match board_options {
             None => BoardOptions::default(), // If no options is set we use the default one
-            Some(o) => {
-                commands.remove_resource::<BoardOptions>(); // After this system the options are no longer relevant
-                o.clone()
-            }
+            Some(o) => o.clone(),
         };
 
         // Tilemap generation
@@ -87,7 +104,7 @@ impl BoardPlugin {
         let mut covered_tiles =
             HashMap::with_capacity((tile_map.width() * tile_map.height()).into());
         let mut safe_start = None;
-        commands
+        let board_entity = commands
             .spawn()
             .insert(Name::new("Board"))
             .insert(Transform::from_translation(board_position))
@@ -115,7 +132,8 @@ impl BoardPlugin {
                     &mut covered_tiles,
                     &mut safe_start,
                 );
-            });
+            })
+            .id();
         if options.safe_start {
             if let Some(entity) = safe_start {
                 commands.entity(entity).insert(Uncover {});
@@ -130,6 +148,7 @@ impl BoardPlugin {
             },
             tile_size,
             covered_tiles,
+            entity: board_entity,
         })
     }
 
@@ -268,5 +287,10 @@ impl BoardPlugin {
         let max_width = window.width / width as f32;
         let max_heigth = window.height / height as f32;
         max_width.min(max_heigth).clamp(min, max)
+    }
+
+    fn cleanup_board(board: Res<Board>, mut commands: Commands) {
+        commands.entity(board.entity).despawn_recursive();
+        commands.remove_resource::<Board>();
     }
 }

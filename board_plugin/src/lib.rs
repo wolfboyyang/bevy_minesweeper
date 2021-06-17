@@ -4,16 +4,21 @@ use crate::tile_map::TileMap;
 use bevy::log;
 use bevy::prelude::*;
 use bevy::text::Text2dSize;
+pub use bounds::*;
 pub use resources::*;
 
+mod bounds;
 pub mod components;
+pub mod events;
 mod resources;
+mod systems;
 
 pub struct BoardPlugin {}
 
 impl Plugin for BoardPlugin {
     fn build(&self, app: &mut AppBuilder) {
-        app.add_startup_system(Self::create_board.system());
+        app.add_startup_system(Self::create_board.system())
+            .add_system(systems::input::input_handling.system());
     }
 }
 
@@ -99,6 +104,15 @@ impl BoardPlugin {
                     font,
                 );
             });
+        // We add the main resource of the game, the board
+        commands.insert_resource(Board {
+            tile_map,
+            bounds: Bounds2 {
+                position: board_position.into(),
+                size: board_size,
+            },
+            tile_size,
+        })
     }
 
     fn spawn_tiles(

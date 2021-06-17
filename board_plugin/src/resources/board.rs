@@ -27,4 +27,26 @@ impl Board {
             y: (coordinates.y / self.tile_size) as u16,
         })
     }
+
+    /// Retrieves a covered tile entity
+    pub fn covered_tile(&self, coords: &Coordinates) -> Option<&Entity> {
+        self.covered_tiles.get(&coords)
+    }
+
+    /// We try to uncover a tile, returning the entity
+    pub fn try_uncover_tile(&mut self, coords: &Coordinates) -> Option<Entity> {
+        self.covered_tiles.remove(coords)
+    }
+
+    /// We retrieve the adjacent covered tile entities of `coord`
+    pub fn adjacent_covered_tiles(&self, coord: &Coordinates) -> Vec<Entity> {
+        let vec = self.tile_map.safe_square_at(coord);
+        let mut res = Vec::new();
+        for coord in vec.into_iter() {
+            if let Some(entity) = self.covered_tiles.get(&coord) {
+                res.push(*entity);
+            }
+        }
+        res
+    }
 }

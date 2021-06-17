@@ -7,6 +7,7 @@ use bevy::text::Text2dSize;
 pub use bounds::*;
 pub use resources::*;
 use std::collections::HashMap;
+use crate::events::TileTriggerEvent;
 
 mod bounds;
 pub mod components;
@@ -19,7 +20,10 @@ pub struct BoardPlugin {}
 impl Plugin for BoardPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.add_startup_system(Self::create_board.system())
-            .add_system(systems::input::input_handling.system());
+            .add_system(systems::input::input_handling.system())
+            .add_system(systems::uncover::trigger_event_handler.system())
+            .add_system(systems::uncover::uncover_tiles.system())
+            .add_event::<TileTriggerEvent>();
     }
 }
 
@@ -80,7 +84,8 @@ impl BoardPlugin {
         let bomb_material = materials.add(asset_server.load("sprites/bomb.png").into());
         //
 
-        let mut covered_tiles = HashMap::with_capacity((tile_map.width() * tile_map.height()).into());
+        let mut covered_tiles =
+            HashMap::with_capacity((tile_map.width() * tile_map.height()).into());
         commands
             .spawn()
             .insert(Name::new("Board"))
@@ -183,7 +188,7 @@ impl BoardPlugin {
                     let entity = parent
                         .spawn_bundle(SpriteBundle {
                             sprite: Sprite::new(Vec2::splat(size - padding)),
-                            transform: Transform::from_xyz(0., 0., 1.),
+                            transform: Transform::from_xyz(0., 0., 2.),
                             material: covered_tile_material.clone(),
                             ..Default::default()
                         })

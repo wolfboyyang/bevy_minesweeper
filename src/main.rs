@@ -3,6 +3,7 @@ use bevy::prelude::*;
 
 #[cfg(feature = "debug")]
 use bevy_inspector_egui::WorldInspectorPlugin;
+use board_plugin::BoardPlugin;
 
 fn main() {
     let mut app = App::build();
@@ -19,6 +20,7 @@ fn main() {
         ..Default::default()
     })
     // Board plugin options
+    .add_plugin(BoardPlugin {})
     // Bevy default plugins
     .add_plugins(DefaultPlugins)
     // Startup system (cameras)

@@ -11,7 +11,7 @@ default = []
 debug = ["board_plugin/debug", "bevy-inspector-egui"]
 
 [dependencies]
-bevy = "0.5"
+bevy = { version = "0.5", features = ["dynamic"] }
 board_plugin = { path = "board_plugin" }
 
 # Hierarchy inspector debug

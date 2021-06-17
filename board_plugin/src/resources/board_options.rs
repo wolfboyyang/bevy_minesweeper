@@ -32,7 +32,7 @@ pub struct BoardOptions {
     /// Tile world size
     pub tile_size: TileSize,
     /// Padding between tiles
-    pub tile_padding: u8,
+    pub tile_padding: f32,
     /// Does the board generate a safe place to start
     pub safe_start: bool,
 }
@@ -61,7 +61,7 @@ impl Default for BoardOptions {
             bomb_count: 30,
             position: Default::default(),
             tile_size: Default::default(),
-            tile_padding: 0,
+            tile_padding: 0.,
             safe_start: false,
         }
     }

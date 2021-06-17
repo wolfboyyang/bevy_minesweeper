@@ -23,7 +23,7 @@ fn main() {
     .insert_resource(BoardOptions {
         map_size: (20, 20),
         bomb_count: 40,
-        tile_padding: 3,
+        tile_padding: 3.,
         ..Default::default()
     })
     // Board plugin

@@ -2,12 +2,14 @@ use crate::components::Coordinates;
 use crate::tile_map::TileMap;
 use crate::Bounds2;
 use bevy::prelude::*;
+use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct Board {
     pub tile_map: TileMap,
     pub bounds: Bounds2,
     pub tile_size: f32,
+    pub covered_tiles: HashMap<Coordinates, Entity>,
 }
 
 impl Board {

@@ -6,6 +6,7 @@ use bevy::prelude::*;
 use bevy::text::Text2dSize;
 pub use bounds::*;
 pub use resources::*;
+use std::collections::HashMap;
 
 mod bounds;
 pub mod components;
@@ -73,11 +74,13 @@ impl BoardPlugin {
 
         // TODO: refactor this (This will move into a resource in a following chapter)
         let board_material = materials.add(Color::WHITE.into());
-        let tile_material = materials.add(Color::GRAY.into());
+        let tile_material = materials.add(Color::DARK_GRAY.into());
+        let covered_tile_material = materials.add(Color::GRAY.into());
         let font = asset_server.load("fonts/minecraft.ttf");
         let bomb_material = materials.add(asset_server.load("sprites/bomb.png").into());
         //
 
+        let mut covered_tiles = HashMap::with_capacity((tile_map.width() * tile_map.height()).into());
         commands
             .spawn()
             .insert(Name::new("Board"))
@@ -101,7 +104,9 @@ impl BoardPlugin {
                     options.tile_padding,
                     tile_material,
                     bomb_material,
+                    covered_tile_material,
                     font,
+                    &mut covered_tiles,
                 );
             });
         // We add the main resource of the game, the board
@@ -112,6 +117,7 @@ impl BoardPlugin {
                 size: board_size,
             },
             tile_size,
+            covered_tiles,
         })
     }
 
@@ -122,11 +128,17 @@ impl BoardPlugin {
         padding: f32,
         material: Handle<ColorMaterial>,
         bomb_material: Handle<ColorMaterial>,
+        covered_tile_material: Handle<ColorMaterial>,
         font: Handle<Font>,
+        covered_tiles: &mut HashMap<Coordinates, Entity>,
     ) {
         // Tiles
         for (y, line) in tile_map.iter().enumerate() {
             for (x, tile) in line.iter().enumerate() {
+                let coordinates = Coordinates {
+                    x: x as u16,
+                    y: y as u16,
+                };
                 let mut cmd = parent.spawn();
                 cmd.insert_bundle(SpriteBundle {
                     sprite: Sprite::new(Vec2::splat(size - padding)),
@@ -139,10 +151,7 @@ impl BoardPlugin {
                     ..Default::default()
                 })
                 .insert(Name::new(format!("Tile ({}, {})", x, y)))
-                .insert(Coordinates {
-                    x: x as u16,
-                    y: y as u16,
-                });
+                .insert(coordinates);
                 match tile {
                     // If the tile is a bomb we add the matching component and a sprite child
                     Tile::Bomb => {
@@ -169,6 +178,18 @@ impl BoardPlugin {
                     }
                     Tile::Empty => (),
                 }
+                // We add the cover sprites
+                cmd.with_children(|parent| {
+                    let entity = parent
+                        .spawn_bundle(SpriteBundle {
+                            sprite: Sprite::new(Vec2::splat(size - padding)),
+                            transform: Transform::from_xyz(0., 0., 1.),
+                            material: covered_tile_material.clone(),
+                            ..Default::default()
+                        })
+                        .id();
+                    covered_tiles.insert(coordinates, entity);
+                });
             }
         }
     }

@@ -1,0 +1,28 @@
+[package]
+name = "board_plugin"
+version = "0.1.0"
+authors = ["Felix de Maneville <felix.maneville@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+default = []
+debug = ["colored", "bevy-inspector-egui"]
+
+[dependencies]
+# Engine
+bevy = "0.5"
+
+# Serialization
+serde = "1.0"
+serde_yaml = "0.8"
+
+# Random
+rand = "0.8"
+
+# Console Debug
+colored = { version = "2.0", optional = true }
+# Hierarchy inspector debug
+bevy-inspector-egui = { version = "0.5", optional = true }
+

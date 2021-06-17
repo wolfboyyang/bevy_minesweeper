@@ -16,9 +16,20 @@ impl Plugin for BoardPlugin {
 
 impl BoardPlugin {
     /// System to generate the complete board
-    pub fn create_board() {
-        let mut tile_map = TileMap::empty(20, 20);
-        tile_map.set_bombs(40);
+    pub fn create_board(mut commands: Commands, board_options: Option<Res<BoardOptions>>) {
+        let options = match board_options {
+            None => BoardOptions::default(), // If no options is set we use the default one
+            Some(o) => {
+                commands.remove_resource::<BoardOptions>(); // After this system the options are no longer relevant
+                o.clone()
+            }
+        };
+
+        // Tilemap generation
+        let mut tile_map = TileMap::empty(options.map_size.0, options.map_size.1);
+        tile_map.set_bombs(options.mine_count);
+        #[cfg(feature = "debug")]
+        // Tilemap debugging
         log::info!("{}", tile_map.console_output());
     }
 }

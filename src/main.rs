@@ -3,7 +3,7 @@ use bevy::prelude::*;
 
 #[cfg(feature = "debug")]
 use bevy_inspector_egui::WorldInspectorPlugin;
-use board_plugin::BoardPlugin;
+use board_plugin::{BoardOptions, BoardPlugin};
 
 fn main() {
     let mut app = App::build();
@@ -20,11 +20,17 @@ fn main() {
         ..Default::default()
     })
     // Board plugin options
+    .insert_resource(BoardOptions {
+        map_size: (20, 20),
+        mine_count: 40,
+        ..Default::default()
+    })
+    // Board plugin
     .add_plugin(BoardPlugin {})
     // Bevy default plugins
     .add_plugins(DefaultPlugins)
     // Startup system (cameras)
-    .add_startup_system(setup.system());
+    .add_startup_system(setup_camera.system());
     #[cfg(feature = "debug")]
     // Debug hierarchy inspector
     app.add_plugin(WorldInspectorPlugin::new());
@@ -32,7 +38,7 @@ fn main() {
     app.run();
 }
 
-fn setup(mut commands: Commands) {
+fn setup_camera(mut commands: Commands) {
     // 2D orthographic camera
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
 }

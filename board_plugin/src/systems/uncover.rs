@@ -28,7 +28,7 @@ pub fn uncover_tiles(
         };
         // We remove the entity from the board map
         match board.try_uncover_tile(coords) {
-            None => log::warn!("Tried to uncover an already uncovered tile"),
+            None => log::debug!("Tried to uncover an already uncovered tile"),
             Some(e) => log::debug!("Uncovered tile {} (entity: {:?})", coords, e),
         }
         if bomb.is_some() {
@@ -52,7 +52,7 @@ pub fn trigger_event_handler(
     mut tile_trigger_evr: EventReader<TileTriggerEvent>,
 ) {
     for trigger_event in tile_trigger_evr.iter() {
-        if let Some(entity) = board.covered_tile(&trigger_event.0) {
+        if let Some(entity) = board.uncoverable_tile(&trigger_event.0) {
             commands.entity(*entity).insert(Uncover {});
         }
     }

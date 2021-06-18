@@ -1,6 +1,7 @@
 use crate::components::Coordinates;
 use crate::tile_map::TileMap;
 use crate::Bounds2;
+use bevy::log;
 use bevy::prelude::*;
 use std::collections::HashMap;
 
@@ -10,6 +11,7 @@ pub struct Board {
     pub bounds: Bounds2,
     pub tile_size: f32,
     pub covered_tiles: HashMap<Coordinates, Entity>,
+    pub marked_tiles: Vec<Coordinates>,
     pub entity: Entity,
 }
 
@@ -30,13 +32,35 @@ impl Board {
     }
 
     /// Retrieves a covered tile entity
-    pub fn covered_tile(&self, coords: &Coordinates) -> Option<&Entity> {
-        self.covered_tiles.get(&coords)
+    pub fn uncoverable_tile(&self, coords: &Coordinates) -> Option<&Entity> {
+        if self.marked_tiles.contains(coords) {
+            None
+        } else {
+            self.covered_tiles.get(coords)
+        }
     }
 
     /// We try to uncover a tile, returning the entity
     pub fn try_uncover_tile(&mut self, coords: &Coordinates) -> Option<Entity> {
-        self.covered_tiles.remove(coords)
+        if self.marked_tiles.contains(coords) {
+            None
+        } else {
+            self.covered_tiles.remove(coords)
+        }
+    }
+
+    /// We try to mark or unmark a tile, returning the entity and if the tile is marked
+    pub fn try_toggle_mark(&mut self, coords: &Coordinates) -> Option<(Entity, bool)> {
+        let entity = self.covered_tiles.get(coords)?;
+        let mark = if self.marked_tiles.contains(coords) {
+            let pos = self.marked_tiles.iter().position(|a| a == coords)?;
+            self.marked_tiles.remove(pos);
+            false
+        } else {
+            self.marked_tiles.push(*coords);
+            true
+        };
+        Some((*entity, mark))
     }
 
     /// We retrieve the adjacent covered tile entities of `coord`
@@ -49,5 +73,24 @@ impl Board {
             }
         }
         res
+    }
+
+    /// Is the board complete
+    pub fn is_completed(&self) -> bool {
+        let remaining_bombs = self
+            .tile_map
+            .bomb_count()
+            .saturating_sub(self.marked_tiles.len() as u16);
+        if remaining_bombs > 0 {
+            log::info!("Remaining bombs: {}", remaining_bombs);
+            return false;
+        }
+        for coord in self.marked_tiles.iter() {
+            if !self.tile_map.is_bomb_at(coord) {
+                log::info!("{} is not a bomb", coord);
+                return false;
+            }
+        }
+        true
     }
 }

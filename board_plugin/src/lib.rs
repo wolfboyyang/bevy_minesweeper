@@ -1,5 +1,5 @@
 use crate::components::{Bomb, BombNeighbor, Coordinates, Uncover};
-use crate::events::TileTriggerEvent;
+use crate::events::*;
 use crate::resources::tile::Tile;
 use crate::tile_map::TileMap;
 use bevy::log;
@@ -37,13 +37,17 @@ impl<T: 'static + Debug + Clone + Eq + PartialEq + Hash + Send + Sync> Plugin fo
         // We handle uncovering even if the state is inactive
         .add_system_set(
             SystemSet::on_in_stack_update(self.running_state.clone())
-                .with_system(systems::uncover::uncover_tiles.system()),
+                .with_system(systems::uncover::uncover_tiles.system())
+                .with_system(systems::mark::mark_tiles.system()),
         )
         .add_system_set(
             SystemSet::on_exit(self.running_state.clone())
                 .with_system(Self::cleanup_board.system()),
         )
-        .add_event::<TileTriggerEvent>();
+        .add_event::<TileTriggerEvent>()
+        .add_event::<TileMarkEvent>()
+        .add_event::<BombExplosionEvent>()
+        .add_event::<BoardCompletedEvent>();
     }
 }
 
@@ -135,6 +139,7 @@ impl<T> BoardPlugin<T> {
             },
             tile_size,
             covered_tiles,
+            marked_tiles: Vec::new(),
             entity: board_entity,
         })
     }

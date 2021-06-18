@@ -23,6 +23,7 @@ pub fn mark_tiles(
                     });
                 });
                 if board.is_completed() {
+                    log::info!("Board completed");
                     board_completed_event_wr.send(BoardCompletedEvent {});
                 }
             } else {

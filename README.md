@@ -4,7 +4,7 @@
 
 Source code for the Bevy tutorial by Félix de Maneville.
 
-<img src="./docs/demo_dark.gif" alt="dark demo gif" width="400"/>
+<img src="./docs/demo_dark.gif" alt="demo gif" width="400"/>
 
 ## Run
 
@@ -23,13 +23,7 @@ use `cargo run` to launch the app in native. Use the `debug` feature for debug i
 
 Use the *left* mouse button to uncover tiles, and the *right* mouse button to mark tiles.
 
-### Clear and generate
-
-Press `C` to clear the current board, and `G` to generate a new board
-
-### Dark theme
-
-Press `S` to toggle the dark theme
+You can also *Clear* the board, *Generate* a new one or switch themes
 
 <img src="./docs/light_theme_screen.png" alt="screenshot" width="300"/>
 <img src="./docs/dark_theme_screen.png" alt="dark screenshot" width="300"/>

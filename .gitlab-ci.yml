@@ -1,0 +1,65 @@
+variables:
+  CARGO_HOME: $CI_PROJECT_DIR/.cargo
+  RUST_BACKTRACE: 1
+
+image: rust:latest
+
+stages:
+  - build
+  - test
+  - deploy
+
+cache: &cache_template
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+    - target
+    - .cargo
+  policy: pull-push
+
+.cache_pulll_template: &cache_pull_template
+  cache:
+    <<: *cache_template
+    policy: pull
+
+build::default:
+  stage: build
+  script:
+    - cargo build
+  cache:
+    <<: *cache_template
+
+build::wasm:
+  stage: build
+  script:
+    - cargo install -q cargo-make
+    - cargo make --profile release build-web
+  cache:
+    <<: *cache_template
+
+test:clippy:
+  <<: *cache_pull_template
+  stage: test
+  script:
+    - rustup component add clippy
+    - cargo clippy --all-targets -- -D warnings
+
+test::rustfmt:
+  <<: *cache_pull_template
+  stage: test
+  script:
+    - rustup component add rustfmt
+    - cargo fmt --all -- --check
+
+deploy::wasm:
+  stage: deploy
+  script:
+    - mkdir public
+    - mkdir public/target
+    - cp index.html public
+    - cp -r target/wasm32-unknown-unknown public/target
+    - cp target/wasm.js public/target
+    - cp target/wasm_bg.wasm public/target
+    - cp -r assets public
+  artifacts:
+    paths:
+      - public

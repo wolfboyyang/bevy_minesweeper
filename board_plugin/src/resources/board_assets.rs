@@ -3,7 +3,7 @@ use bevy::prelude::*;
 /// Assets for the board. Must be used as a resource.
 ///
 /// Use the loader for partial setup
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct BoardAssets {
     /// Label
     pub label: String,

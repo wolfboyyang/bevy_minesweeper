@@ -22,11 +22,11 @@ pub fn input_handling(
                 if let Some(coordinates) = tile_coordinates {
                     match event.button {
                         MouseButton::Left => {
-                            log::info!("Trying to a uncover tile on {}", coordinates);
+                            log::info!("Trying to uncover tile on {}", coordinates);
                             tile_trigger_ewr.send(TileTriggerEvent(coordinates));
                         }
                         MouseButton::Right => {
-                            log::info!("Trying to a mark tile on {}", coordinates);
+                            log::info!("Trying to mark tile on {}", coordinates);
                             tile_mark_ewr.send(TileMarkEvent(coordinates))
                         }
                         _ => (),

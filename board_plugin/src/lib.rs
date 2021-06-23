@@ -5,6 +5,8 @@ use crate::tile_map::TileMap;
 use bevy::log;
 use bevy::prelude::*;
 use bevy::text::Text2dSize;
+#[cfg(feature = "debug")]
+use bevy_inspector_egui::InspectableRegistry;
 pub use bounds::*;
 pub use resources::*;
 use std::collections::HashMap;
@@ -48,6 +50,18 @@ impl<T: 'static + Debug + Clone + Eq + PartialEq + Hash + Send + Sync> Plugin fo
         .add_event::<TileMarkEvent>()
         .add_event::<BombExplosionEvent>()
         .add_event::<BoardCompletedEvent>();
+        #[cfg(feature = "debug")]
+        {
+            // getting registry from world
+            let mut registry = app
+                .world_mut()
+                .get_resource_or_insert_with(InspectableRegistry::default);
+            // registering custom component to be able to edit it in inspector
+            registry.register::<Coordinates>();
+            registry.register::<BombNeighbor>();
+            registry.register::<Bomb>();
+            registry.register::<Uncover>();
+        }
     }
 }
 

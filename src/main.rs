@@ -17,8 +17,8 @@ fn main() {
     // Window setup
     app.insert_resource(WindowDescriptor {
         title: "Mine Sweeper!".to_string(),
-        width: 700.,
-        height: 1000.,
+        width: 1000.,
+        height: 700.,
         ..Default::default()
     })
     // Log setup
@@ -38,9 +38,12 @@ fn main() {
     .add_startup_system(setup_camera.system())
     // State handling
     .add_system(input_handler.system());
-    #[cfg(feature = "debug")]
     // Debug hierarchy inspector
+    #[cfg(feature = "debug")]
     app.add_plugin(WorldInspectorPlugin::new());
+    // when building for Web, use WebGL2 rendering
+    #[cfg(target_arch = "wasm32")]
+    app.add_plugin(bevy_webgl2::WebGL2Plugin);
     // Run the app
     app.run();
 }
@@ -59,6 +62,7 @@ fn setup_board(
         safe_start: true,
         ..Default::default()
     });
+    // Board assets
     commands.insert_resource(BoardAssets {
         label: "Default".to_string(),
         board_material: materials.add(Color::WHITE.into()),
@@ -69,7 +73,7 @@ fn setup_board(
         flag_material: materials.add(asset_server.load("sprites/white_flag.png").into()),
         bomb_material: materials.add(asset_server.load("sprites/bomb.png").into()),
     });
-    // Bevy default plugins
+    // Launch game
     state.set(AppState::InGame).unwrap();
 }
 

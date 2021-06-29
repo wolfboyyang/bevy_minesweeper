@@ -1,5 +1,4 @@
-mod button_materials;
-mod button_type;
+mod buttons;
 
 use bevy::log;
 use bevy::log::{Level, LogSettings};
@@ -7,8 +6,9 @@ use bevy::prelude::*;
 #[cfg(feature = "debug")]
 use bevy_inspector_egui::WorldInspectorPlugin;
 
-use crate::button_materials::ButtonMaterials;
-use crate::button_type::ButtonAction;
+use crate::buttons::{ButtonAction, ButtonMaterials};
+#[cfg(feature = "debug")]
+use bevy_inspector_egui::InspectableRegistry;
 use board_plugin::{BoardAssets, BoardOptions, BoardPlugin, BoardPosition};
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
@@ -51,6 +51,15 @@ fn main() {
     // when building for Web, use WebGL2 rendering
     #[cfg(target_arch = "wasm32")]
     app.add_plugin(bevy_webgl2::WebGL2Plugin);
+    #[cfg(feature = "debug")]
+    {
+        // getting registry from world
+        let mut registry = app
+            .world_mut()
+            .get_resource_or_insert_with(InspectableRegistry::default);
+        // registering custom component to be able to edit it in inspector
+        registry.register::<ButtonAction>();
+    }
     // Run the app
     app.run();
 }
@@ -157,6 +166,11 @@ fn setup_ui(
     mut materials: ResMut<Assets<ColorMaterial>>,
     asset_server: Res<AssetServer>,
 ) {
+    let button_materials = ButtonMaterials {
+        normal: materials.add(Color::GRAY.into()),
+        hovered: materials.add(Color::DARK_GRAY.into()),
+        pressed: materials.add(Color::BLACK.into()),
+    };
     commands
         .spawn_bundle(NodeBundle {
             style: Style {
@@ -170,35 +184,30 @@ fn setup_ui(
         })
         .insert(Name::new("UI"))
         .with_children(|parent| {
-            let material = materials.add(Color::GRAY.into());
             let font = asset_server.load("fonts/pixeled.ttf");
             setup_single_menu(
                 parent,
                 "CLEAR",
-                material.clone(),
+                button_materials.normal.clone(),
                 font.clone(),
                 ButtonAction::Clear,
             );
             setup_single_menu(
                 parent,
                 "GENERATE",
-                material.clone(),
+                button_materials.normal.clone(),
                 font.clone(),
                 ButtonAction::Generate,
             );
             setup_single_menu(
                 parent,
                 "SWITCH THEME",
-                material,
+                button_materials.normal.clone(),
                 font,
                 ButtonAction::SwitchTheme,
             );
         });
-    commands.insert_resource(ButtonMaterials {
-        normal: materials.add(Color::GRAY.into()),
-        hovered: materials.add(Color::DARK_GRAY.into()),
-        pressed: materials.add(Color::BLACK.into()),
-    })
+    commands.insert_resource(button_materials);
 }
 
 fn setup_single_menu(

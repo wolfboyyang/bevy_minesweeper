@@ -1,3 +1,4 @@
+use bevy::prelude::*;
 #[cfg(feature = "debug")]
 use bevy_inspector_egui::Inspectable;
 
@@ -8,4 +9,11 @@ pub enum ButtonAction {
     Clear,
     Generate,
     SwitchTheme,
+}
+
+#[derive(Debug)]
+pub struct ButtonMaterials {
+    pub normal: Handle<ColorMaterial>,
+    pub hovered: Handle<ColorMaterial>,
+    pub pressed: Handle<ColorMaterial>,
 }

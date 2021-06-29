@@ -32,7 +32,7 @@ impl Board {
     }
 
     /// Retrieves a covered tile entity
-    pub fn uncoverable_tile(&self, coords: &Coordinates) -> Option<&Entity> {
+    pub fn tile_to_uncover(&self, coords: &Coordinates) -> Option<&Entity> {
         if self.marked_tiles.contains(coords) {
             None
         } else {
@@ -40,27 +40,37 @@ impl Board {
         }
     }
 
+    /// Removes the `coords` from `marked_tiles`
+    fn unmark_tile(&mut self, coords: &Coordinates) -> Option<Coordinates> {
+        let pos = match self.marked_tiles.iter().position(|a| a == coords) {
+            None => {
+                log::error!("Failed to unmark tile at {}", coords);
+                return None;
+            }
+            Some(p) => p,
+        };
+        Some(self.marked_tiles.remove(pos))
+    }
+
     /// We try to uncover a tile, returning the entity
     pub fn try_uncover_tile(&mut self, coords: &Coordinates) -> Option<Entity> {
         if self.marked_tiles.contains(coords) {
-            None
-        } else {
-            self.covered_tiles.remove(coords)
+            self.unmark_tile(coords)?;
         }
+        self.covered_tiles.remove(coords)
     }
 
     /// We try to mark or unmark a tile, returning the entity and if the tile is marked
     pub fn try_toggle_mark(&mut self, coords: &Coordinates) -> Option<(Entity, bool)> {
-        let entity = self.covered_tiles.get(coords)?;
+        let entity = *self.covered_tiles.get(coords)?;
         let mark = if self.marked_tiles.contains(coords) {
-            let pos = self.marked_tiles.iter().position(|a| a == coords)?;
-            self.marked_tiles.remove(pos);
+            self.unmark_tile(coords)?;
             false
         } else {
             self.marked_tiles.push(*coords);
             true
         };
-        Some((*entity, mark))
+        Some((entity, mark))
     }
 
     /// We retrieve the adjacent covered tile entities of `coord`
@@ -82,12 +92,10 @@ impl Board {
             .bomb_count()
             .saturating_sub(self.marked_tiles.len() as u16);
         if remaining_bombs > 0 {
-            log::info!("Remaining bombs: {}", remaining_bombs);
             return false;
         }
         for coord in self.marked_tiles.iter() {
             if !self.tile_map.is_bomb_at(coord) {
-                log::info!("{} is not a bomb", coord);
                 return false;
             }
         }

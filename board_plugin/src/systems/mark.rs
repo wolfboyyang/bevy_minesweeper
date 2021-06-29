@@ -13,19 +13,21 @@ pub fn mark_tiles(
 ) {
     for event in tile_mark_event_rdr.iter() {
         if let Some((entity, mark)) = board.try_toggle_mark(&event.0) {
+            if board.is_completed() {
+                log::info!("Board completed");
+                board_completed_event_wr.send(BoardCompletedEvent {});
+            }
             if mark {
                 commands.entity(entity).with_children(|parent| {
-                    parent.spawn_bundle(SpriteBundle {
-                        material: board_assets.flag_material.clone(),
-                        sprite: Sprite::new(Vec2::splat(board.tile_size)),
-                        transform: Transform::from_xyz(0., 0., 1.),
-                        ..Default::default()
-                    });
+                    parent
+                        .spawn_bundle(SpriteBundle {
+                            material: board_assets.flag_material.clone(),
+                            sprite: Sprite::new(Vec2::splat(board.tile_size)),
+                            transform: Transform::from_xyz(0., 0., 1.),
+                            ..Default::default()
+                        })
+                        .insert(Name::new("Flag"));
                 });
-                if board.is_completed() {
-                    log::info!("Board completed");
-                    board_completed_event_wr.send(BoardCompletedEvent {});
-                }
             } else {
                 let children = match query.get(entity) {
                     Ok(c) => c,

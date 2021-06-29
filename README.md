@@ -4,7 +4,7 @@
 
 Source code for the Bevy tutorial by Félix de Maneville.
 
-<img src="./docs/demo_dark.gif" alt="demo gif" width="400"/>
+<img src="./docs/demo.gif" alt="demo gif" width="400"/>
 
 ## Run
 
@@ -25,10 +25,5 @@ Use the *left* mouse button to uncover tiles, and the *right* mouse button to ma
 
 You can also *Clear* the board, *Generate* a new one or switch themes
 
-<img src="./docs/light_theme_screen.png" alt="screenshot" width="300"/>
-<img src="./docs/dark_theme_screen.png" alt="dark screenshot" width="300"/>
-
-## Board edition
-
-The application loads its theme from files in the `assets` folder (see `main.rs`).
-You may edit the files or edit the `main.rs` file
+<img src="./docs/light_theme_screen.png" alt="screenshot" width="400"/>
+<img src="./docs/dark_theme_screen.png" alt="dark screenshot" width="400"/>

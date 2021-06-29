@@ -16,7 +16,7 @@ cache: &cache_template
     - .cargo
   policy: pull-push
 
-.cache_pulll_template: &cache_pull_template
+.cache_pull_template: &cache_pull_template
   cache:
     <<: *cache_template
     policy: pull
@@ -51,6 +51,7 @@ test::rustfmt:
     - cargo fmt --all -- --check
 
 deploy::wasm:
+  <<: *cache_pull_template
   stage: deploy
   script:
     - mkdir public

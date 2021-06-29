@@ -1,4 +1,4 @@
 # Font credits
 
-* Minecraft font: [https://www.dafont.com/fr/minecraft.font](https://www.dafont.com/fr/minecraft.font)
+* Pixeled font: [https://www.dafont.com/fr/pixeled.font](https://www.dafont.com/fr/pixeled.fontt)
 

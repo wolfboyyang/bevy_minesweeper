@@ -1,4 +1,4 @@
 # Image credits
 
-* White flag:  Icon made by [Alfredo Hernandez](https://www.flaticon.com/authors/alfredo-hernandez)
+* Flag:  Icon made by [Alfredo Hernandez](https://www.flaticon.com/authors/alfredo-hernandez)
 * Bomb: Icon property of [Qonfucius](https://qonfucius.com/fr)

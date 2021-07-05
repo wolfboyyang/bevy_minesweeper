@@ -50,7 +50,7 @@ test::rustfmt:
     - rustup component add rustfmt
     - cargo fmt --all -- --check
 
-deploy::wasm:
+pages:
   <<: *cache_pull_template
   stage: deploy
   script:

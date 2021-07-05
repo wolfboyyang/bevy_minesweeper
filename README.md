@@ -6,6 +6,10 @@ Source code for the Bevy tutorial by Félix de Maneville.
 
 <img src="./docs/demo.gif" alt="demo gif" width="400"/>
 
+## Live version
+
+A browser version is available [here](https://qonfucius.gitlab.io/incubator/minesweeper/minesweeper-tutorial/)
+
 ## Run
 
 use `cargo run` to launch the app in native. Use the `debug` feature for debug inspector and board console output.

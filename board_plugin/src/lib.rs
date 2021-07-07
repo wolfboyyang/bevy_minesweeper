@@ -71,7 +71,7 @@ impl<T> BoardPlugin<T> {
         mut commands: Commands,
         board_options: Option<Res<BoardOptions>>,
         board_assets: Res<BoardAssets>,
-        window: Res<WindowDescriptor>,
+        windows: Res<Windows>,
     ) {
         let options = match board_options {
             None => BoardOptions::default(), // If no options is set we use the default one
@@ -90,7 +90,7 @@ impl<T> BoardPlugin<T> {
         let tile_size = match options.tile_size {
             TileSize::Fixed(v) => v,
             TileSize::Adaptive { min, max } => Self::adaptative_tile_size(
-                window,
+                windows.get_primary().unwrap(),
                 (min, max),
                 (tile_map.width(), tile_map.height()),
             ),
@@ -279,12 +279,12 @@ impl<T> BoardPlugin<T> {
 
     /// Computes a tile size that matches the window according to the tile map size
     fn adaptative_tile_size(
-        window: Res<WindowDescriptor>,
+        window: &Window,
         (min, max): (f32, f32),
         (width, height): (u16, u16),
     ) -> f32 {
-        let max_width = window.width / width as f32;
-        let max_heigth = window.height / height as f32;
+        let max_width = window.width() / width as f32;
+        let max_heigth = window.height() / height as f32;
         max_width.min(max_heigth).clamp(min, max)
     }
 

@@ -1,4 +1,21 @@
 use bevy::prelude::*;
+use bevy::render::texture::DEFAULT_IMAGE_HANDLE;
+
+/// Material of a `Sprite` with a texture and color
+#[derive(Debug, Clone)]
+pub struct SpriteMaterial {
+    pub color: Color,
+    pub texture: Handle<Image>,
+}
+
+impl Default for SpriteMaterial {
+    fn default() -> Self {
+        Self {
+            color: Color::WHITE,
+            texture: DEFAULT_IMAGE_HANDLE.typed(),
+        }
+    }
+}
 
 /// Assets for the board. Must be used as a resource.
 ///
@@ -8,19 +25,19 @@ pub struct BoardAssets {
     /// Label
     pub label: String,
     ///
-    pub board_material: Handle<ColorMaterial>,
+    pub board_material: SpriteMaterial,
     ///
-    pub tile_material: Handle<ColorMaterial>,
+    pub tile_material: SpriteMaterial,
     ///
-    pub covered_tile_material: Handle<ColorMaterial>,
+    pub covered_tile_material: SpriteMaterial,
     ///
     pub bomb_counter_font: Handle<Font>,
     ///
     pub bomb_counter_colors: Vec<Color>,
     ///
-    pub flag_material: Handle<ColorMaterial>,
+    pub flag_material: SpriteMaterial,
     ///
-    pub bomb_material: Handle<ColorMaterial>,
+    pub bomb_material: SpriteMaterial,
 }
 
 impl BoardAssets {

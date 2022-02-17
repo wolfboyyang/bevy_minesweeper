@@ -1,5 +1,6 @@
 /target
 .idea
 tmp
+public
 
 board_plugin/Cargo.lock

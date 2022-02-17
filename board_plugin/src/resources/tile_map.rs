@@ -67,10 +67,10 @@ impl TileMap {
         for y in 0..self.height {
             for x in 0..self.width {
                 let coords = Coordinates { x, y };
-                if self.is_bomb_at(&coords) {
+                if self.is_bomb_at(coords) {
                     continue;
                 }
-                let num = self.bomb_count_at(&coords);
+                let num = self.bomb_count_at(coords);
                 if num == 0 {
                     continue;
                 }
@@ -80,7 +80,7 @@ impl TileMap {
         }
     }
 
-    pub fn is_bomb_at(&self, coordinates: &Coordinates) -> bool {
+    pub fn is_bomb_at(&self, coordinates: Coordinates) -> bool {
         if coordinates.x >= self.width as u16 || coordinates.y >= self.height as u16 {
             return false;
         };
@@ -90,22 +90,22 @@ impl TileMap {
         )
     }
 
-    pub fn bomb_count_at(&self, coordinates: &Coordinates) -> u8 {
+    pub fn bomb_count_at(&self, coordinates: Coordinates) -> u8 {
         if self.is_bomb_at(coordinates) {
             return 0;
         }
-        let vec = self.safe_square_at(coordinates);
-        let res = vec.iter().filter(|coord| self.is_bomb_at(coord)).count();
+        let res = self
+            .safe_square_at(coordinates)
+            .filter(|coord| self.is_bomb_at(*coord))
+            .count();
         res as u8
     }
 
-    pub fn safe_square_at(&self, coordinates: &Coordinates) -> Vec<Coordinates> {
-        let mut vec: Vec<Coordinates> = SQUARE_COORDINATES
+    pub fn safe_square_at(&self, coordinates: Coordinates) -> impl Iterator<Item = Coordinates> {
+        SQUARE_COORDINATES
             .iter()
-            .map(|tuple| *coordinates + *tuple)
-            .collect();
-        vec.dedup();
-        vec
+            .copied()
+            .map(move |tuple| coordinates + tuple)
     }
 
     #[cfg(feature = "debug")]

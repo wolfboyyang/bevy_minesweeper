@@ -14,13 +14,8 @@ pub fn uncover_tiles(
 ) {
     // We iterate through tile covers to uncover
     for (entity, parent) in children.iter() {
-        // We retrieve entity commands
-        commands
-            .entity(entity)
-            // We remove the component
-            .remove::<Uncover>()
-            // we destroy the entity
-            .despawn_recursive();
+        // we destroy the entity
+        commands.entity(entity).despawn_recursive();
         let (coords, bomb, bomb_counter) = match parents.get(parent.0) {
             Ok(v) => v,
             Err(e) => {
@@ -45,7 +40,7 @@ pub fn uncover_tiles(
         else if bomb_counter.is_none() {
             // .. We propagate the uncovering by adding the `Uncover` component to adjacent tiles
             // which will then be removed next frame
-            for entity in board.adjacent_covered_tiles(coords) {
+            for entity in board.adjacent_covered_tiles(*coords) {
                 commands.entity(entity).insert(Uncover {});
             }
         }

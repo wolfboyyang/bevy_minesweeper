@@ -3,13 +3,11 @@ mod buttons;
 use bevy::log;
 use bevy::log::{Level, LogSettings};
 use bevy::prelude::*;
-#[cfg(feature = "debug")]
-use bevy_inspector_egui::WorldInspectorPlugin;
 
-use crate::buttons::{ButtonAction, ButtonMaterials};
+use crate::buttons::{ButtonAction, ButtonColors};
 #[cfg(feature = "debug")]
-use bevy_inspector_egui::InspectableRegistry;
-use board_plugin::{BoardAssets, BoardOptions, BoardPlugin, BoardPosition};
+use bevy_inspector_egui::RegisterInspectable;
+use board_plugin::{BoardAssets, BoardOptions, BoardPlugin, BoardPosition, SpriteMaterial};
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum AppState {
@@ -18,7 +16,13 @@ pub enum AppState {
 }
 
 fn main() {
-    let mut app = App::build();
+    let mut app = App::new();
+    // Debug hierarchy inspector
+    #[cfg(feature = "debug")]
+    {
+        app.add_plugin(bevy_inspector_egui::WorldInspectorPlugin::new());
+        app.register_inspectable::<ButtonAction>();
+    }
     // Window setup
     app.insert_resource(WindowDescriptor {
         title: "Mine Sweeper!".to_string(),
@@ -38,36 +42,20 @@ fn main() {
         running_state: AppState::InGame,
     })
     .add_state(AppState::Out)
-    .add_startup_system(setup_board.system())
+    .add_startup_system(setup_board)
     // Startup system (cameras)
-    .add_startup_system(setup_camera.system())
+    .add_startup_system(setup_camera)
     // UI
-    .add_startup_system(setup_ui.system())
+    .add_startup_system(setup_ui)
     // State handling
-    .add_system(input_handler.system());
-    // Debug hierarchy inspector
-    #[cfg(feature = "debug")]
-    app.add_plugin(WorldInspectorPlugin::new());
-    // when building for Web, use WebGL2 rendering
-    #[cfg(target_arch = "wasm32")]
-    app.add_plugin(bevy_webgl2::WebGL2Plugin);
-    #[cfg(feature = "debug")]
-    {
-        // getting registry from world
-        let mut registry = app
-            .world_mut()
-            .get_resource_or_insert_with(InspectableRegistry::default);
-        // registering custom component to be able to edit it in inspector
-        registry.register::<ButtonAction>();
-    }
+    .add_system(input_handler)
     // Run the app
-    app.run();
+    .run();
 }
 
 fn setup_board(
     mut commands: Commands,
     mut state: ResMut<State<AppState>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
     asset_server: Res<AssetServer>,
 ) {
     // Board plugin options
@@ -84,13 +72,28 @@ fn setup_board(
     // Board assets
     commands.insert_resource(BoardAssets {
         label: "Default".to_string(),
-        board_material: materials.add(Color::WHITE.into()),
-        tile_material: materials.add(Color::DARK_GRAY.into()),
-        covered_tile_material: materials.add(Color::GRAY.into()),
+        board_material: SpriteMaterial {
+            color: Color::WHITE,
+            ..Default::default()
+        },
+        tile_material: SpriteMaterial {
+            color: Color::DARK_GRAY,
+            ..Default::default()
+        },
+        covered_tile_material: SpriteMaterial {
+            color: Color::GRAY,
+            ..Default::default()
+        },
         bomb_counter_font: asset_server.load("fonts/pixeled.ttf"),
         bomb_counter_colors: BoardAssets::default_colors(),
-        flag_material: materials.add(asset_server.load("sprites/flag.png").into()),
-        bomb_material: materials.add(asset_server.load("sprites/bomb.png").into()),
+        flag_material: SpriteMaterial {
+            texture: asset_server.load("sprites/flag.png"),
+            color: Color::WHITE,
+        },
+        bomb_material: SpriteMaterial {
+            texture: asset_server.load("sprites/bomb.png"),
+            color: Color::WHITE,
+        },
     });
     // Launch game
     state.set(AppState::InGame).unwrap();
@@ -105,19 +108,17 @@ fn setup_camera(mut commands: Commands) {
 
 #[allow(clippy::type_complexity)]
 fn input_handler(
-    button_materials: Res<ButtonMaterials>,
+    button_colors: Res<ButtonColors>,
     mut interaction_query: Query<
-        (&Interaction, &mut Handle<ColorMaterial>, &ButtonAction),
+        (&Interaction, &ButtonAction, &mut UiColor),
         (Changed<Interaction>, With<Button>),
     >,
     mut state: ResMut<State<AppState>>,
-    mut board_assets: ResMut<BoardAssets>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    for (interaction, mut material, action) in interaction_query.iter_mut() {
+    for (interaction, action, mut color) in interaction_query.iter_mut() {
         match *interaction {
             Interaction::Clicked => {
-                *material = button_materials.pressed.clone();
+                *color = button_colors.pressed.into();
                 match action {
                     ButtonAction::Clear => {
                         log::debug!("clearing detected");
@@ -133,43 +134,23 @@ fn input_handler(
                             state.set(AppState::InGame).unwrap();
                         }
                     }
-                    ButtonAction::SwitchTheme => {
-                        log::debug!("style switch detected");
-                        if &board_assets.label == "Default" {
-                            board_assets.label = "Dark".to_string();
-                            let material = materials
-                                .get_mut(board_assets.board_material.clone())
-                                .unwrap();
-                            material.color = Color::BLACK;
-                        } else {
-                            board_assets.label = "Default".to_string();
-                            let material = materials
-                                .get_mut(board_assets.board_material.clone())
-                                .unwrap();
-                            material.color = Color::WHITE;
-                        }
-                    }
                 }
             }
             Interaction::Hovered => {
-                *material = button_materials.hovered.clone();
+                *color = button_colors.hovered.into();
             }
             Interaction::None => {
-                *material = button_materials.normal.clone();
+                *color = button_colors.normal.into();
             }
         }
     }
 }
 
-fn setup_ui(
-    mut commands: Commands,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-    asset_server: Res<AssetServer>,
-) {
-    let button_materials = ButtonMaterials {
-        normal: materials.add(Color::GRAY.into()),
-        hovered: materials.add(Color::DARK_GRAY.into()),
-        pressed: materials.add(Color::BLACK.into()),
+fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
+    let button_materials = ButtonColors {
+        normal: Color::GRAY,
+        hovered: Color::DARK_GRAY,
+        pressed: Color::BLACK,
     };
     commands
         .spawn_bundle(NodeBundle {
@@ -179,7 +160,7 @@ fn setup_ui(
                 justify_content: JustifyContent::Center,
                 ..Default::default()
             },
-            material: materials.add(Color::WHITE.into()),
+            color: Color::WHITE.into(),
             ..Default::default()
         })
         .insert(Name::new("UI"))
@@ -188,23 +169,16 @@ fn setup_ui(
             setup_single_menu(
                 parent,
                 "CLEAR",
-                button_materials.normal.clone(),
+                button_materials.normal.into(),
                 font.clone(),
                 ButtonAction::Clear,
             );
             setup_single_menu(
                 parent,
                 "GENERATE",
-                button_materials.normal.clone(),
-                font.clone(),
-                ButtonAction::Generate,
-            );
-            setup_single_menu(
-                parent,
-                "SWITCH THEME",
-                button_materials.normal.clone(),
+                button_materials.normal.into(),
                 font,
-                ButtonAction::SwitchTheme,
+                ButtonAction::Generate,
             );
         });
     commands.insert_resource(button_materials);
@@ -213,7 +187,7 @@ fn setup_ui(
 fn setup_single_menu(
     parent: &mut ChildBuilder,
     text: &str,
-    material: Handle<ColorMaterial>,
+    color: UiColor,
     font: Handle<Font>,
     action: ButtonAction,
 ) {
@@ -228,7 +202,7 @@ fn setup_single_menu(
                 align_items: AlignItems::Center,
                 ..Default::default()
             },
-            material,
+            color,
             ..Default::default()
         })
         .insert(action)

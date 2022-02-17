@@ -1,5 +1,4 @@
 variables:
-  CARGO_HOME: $CI_PROJECT_DIR/.cargo
   RUST_BACKTRACE: 1
 
 image: rust:latest
@@ -30,11 +29,12 @@ build::default:
 
 build::wasm:
   stage: build
-  script:
-    - cargo install -q cargo-make
-    - cargo make --profile release build-web
+  script: ./build_wasm.sh
   cache:
     <<: *cache_template
+  artifacts:
+    paths:
+      - public
 
 test:clippy:
   <<: *cache_pull_template
@@ -53,14 +53,12 @@ test::rustfmt:
 pages:
   <<: *cache_pull_template
   stage: deploy
-  script:
-    - mkdir public
-    - mkdir public/target
-    - cp index.html public
-    - cp -r target/wasm32-unknown-unknown public/target
-    - cp target/wasm.js public/target
-    - cp target/wasm_bg.wasm public/target
-    - cp -r assets public
+  script: pwd
+  needs:
+    - build::wasm
+  only:
+    refs:
+      - master
   artifacts:
     paths:
       - public

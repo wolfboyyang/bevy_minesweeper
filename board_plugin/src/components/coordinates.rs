@@ -1,10 +1,10 @@
-#[cfg(feature = "debug")]
-use bevy_inspector_egui::Inspectable;
+use bevy::prelude::Component;
+
 use std::fmt::{self, Display, Formatter};
 use std::ops::{Add, Sub};
 
-#[cfg_attr(feature = "debug", derive(Inspectable))]
-#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "debug", derive(bevy_inspector_egui::Inspectable))]
+#[derive(Debug, Copy, Default, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Component)]
 pub struct Coordinates {
     pub x: u16,
     pub y: u16,
@@ -45,12 +45,6 @@ impl Sub for Coordinates {
             x: self.x.saturating_sub(rhs.x),
             y: self.y.saturating_sub(rhs.y),
         }
-    }
-}
-
-impl Default for Coordinates {
-    fn default() -> Self {
-        Self { x: 0, y: 0 }
     }
 }
 

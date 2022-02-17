@@ -3,10 +3,10 @@ use crate::events::*;
 use crate::resources::tile::Tile;
 use crate::tile_map::TileMap;
 use bevy::log;
+use bevy::math::Vec3Swizzles;
 use bevy::prelude::*;
-use bevy::text::Text2dSize;
 #[cfg(feature = "debug")]
-use bevy_inspector_egui::InspectableRegistry;
+use bevy_inspector_egui::RegisterInspectable;
 pub use bounds::*;
 pub use resources::*;
 use std::collections::HashMap;
@@ -24,27 +24,25 @@ pub struct BoardPlugin<T> {
 }
 
 impl<T: 'static + Debug + Clone + Eq + PartialEq + Hash + Send + Sync> Plugin for BoardPlugin<T> {
-    fn build(&self, app: &mut AppBuilder) {
+    fn build(&self, app: &mut App) {
         // When the running states comes into the stack we load a board
         app.add_system_set(
-            SystemSet::on_enter(self.running_state.clone())
-                .with_system(Self::create_board.system()),
+            SystemSet::on_enter(self.running_state.clone()).with_system(Self::create_board),
         )
         // We handle input and trigger events only if the state is active
         .add_system_set(
             SystemSet::on_update(self.running_state.clone())
-                .with_system(systems::input::input_handling.system())
-                .with_system(systems::uncover::trigger_event_handler.system()),
+                .with_system(systems::input::input_handling)
+                .with_system(systems::uncover::trigger_event_handler),
         )
         // We handle uncovering even if the state is inactive
         .add_system_set(
             SystemSet::on_in_stack_update(self.running_state.clone())
-                .with_system(systems::uncover::uncover_tiles.system())
-                .with_system(systems::mark::mark_tiles.system()),
+                .with_system(systems::uncover::uncover_tiles)
+                .with_system(systems::mark::mark_tiles),
         )
         .add_system_set(
-            SystemSet::on_exit(self.running_state.clone())
-                .with_system(Self::cleanup_board.system()),
+            SystemSet::on_exit(self.running_state.clone()).with_system(Self::cleanup_board),
         )
         .add_event::<TileTriggerEvent>()
         .add_event::<TileMarkEvent>()
@@ -52,16 +50,12 @@ impl<T: 'static + Debug + Clone + Eq + PartialEq + Hash + Send + Sync> Plugin fo
         .add_event::<BoardCompletedEvent>();
         #[cfg(feature = "debug")]
         {
-            // getting registry from world
-            let mut registry = app
-                .world_mut()
-                .get_resource_or_insert_with(InspectableRegistry::default);
-            // registering custom component to be able to edit it in inspector
-            registry.register::<Coordinates>();
-            registry.register::<BombNeighbor>();
-            registry.register::<Bomb>();
-            registry.register::<Uncover>();
+            app.register_inspectable::<Bomb>()
+                .register_inspectable::<Coordinates>()
+                .register_inspectable::<BombNeighbor>()
+                .register_inspectable::<Uncover>();
         }
+        log::info!("Loaded Board Plugin");
     }
 }
 
@@ -122,8 +116,12 @@ impl<T> BoardPlugin<T> {
                 // We spawn the board background sprite at the center of the board, since the sprite pivot is centered
                 parent
                     .spawn_bundle(SpriteBundle {
-                        sprite: Sprite::new(board_size),
-                        material: board_assets.board_material.clone(),
+                        sprite: Sprite {
+                            custom_size: Some(board_size),
+                            color: board_assets.board_material.color,
+                            ..Default::default()
+                        },
+                        texture: board_assets.board_material.texture.clone(),
                         transform: Transform::from_xyz(board_size.x / 2., board_size.y / 2., 0.),
                         ..Default::default()
                     })
@@ -141,21 +139,21 @@ impl<T> BoardPlugin<T> {
             .id();
         if options.safe_start {
             if let Some(entity) = safe_start {
-                commands.entity(entity).insert(Uncover {});
+                commands.entity(entity).insert(Uncover);
             }
         }
         // We add the main resource of the game, the board
         commands.insert_resource(Board {
             tile_map,
             bounds: Bounds2 {
-                position: board_position.into(),
+                position: board_position.xy(),
                 size: board_size,
             },
             tile_size,
             covered_tiles,
             marked_tiles: Vec::new(),
             entity: board_entity,
-        })
+        });
     }
 
     fn spawn_tiles(
@@ -179,8 +177,12 @@ impl<T> BoardPlugin<T> {
 
                 // Tile sprite
                 cmd.insert_bundle(SpriteBundle {
-                    sprite: Sprite::new(Vec2::splat(size - padding)),
-                    material: board_assets.tile_material.clone(),
+                    sprite: Sprite {
+                        custom_size: Some(Vec2::splat(size - padding)),
+                        color: board_assets.tile_material.color,
+                        ..Default::default()
+                    },
+                    texture: board_assets.tile_material.texture.clone(),
                     transform: Transform::from_xyz(
                         (x as f32 * size) + (size / 2.),
                         (y as f32 * size) + (size / 2.),
@@ -199,9 +201,13 @@ impl<T> BoardPlugin<T> {
                     covered_tile_entity = Some(
                         child_cmd
                             .insert_bundle(SpriteBundle {
-                                sprite: Sprite::new(Vec2::splat(size - padding)),
+                                sprite: Sprite {
+                                    custom_size: Some(Vec2::splat(size - padding)),
+                                    color: board_assets.covered_tile_material.color,
+                                    ..Default::default()
+                                },
                                 transform: Transform::from_xyz(0., 0., 2.),
-                                material: board_assets.covered_tile_material.clone(),
+                                texture: board_assets.covered_tile_material.texture.clone(),
                                 ..Default::default()
                             })
                             .id(),
@@ -211,12 +217,16 @@ impl<T> BoardPlugin<T> {
                 match tile {
                     // If the tile is a bomb we add the matching component and a sprite child
                     Tile::Bomb => {
-                        cmd.insert(Bomb {});
+                        cmd.insert(Bomb);
                         cmd.with_children(|child_cmd| {
                             child_cmd.spawn_bundle(SpriteBundle {
-                                sprite: Sprite::new(Vec2::splat(size - padding)),
+                                sprite: Sprite {
+                                    custom_size: Some(Vec2::splat(size - padding)),
+                                    color: board_assets.bomb_material.color,
+                                    ..Default::default()
+                                },
                                 transform: Transform::from_xyz(0., 0., 1.),
-                                material: board_assets.bomb_material.clone(),
+                                texture: board_assets.bomb_material.texture.clone(),
                                 ..Default::default()
                             });
                         });
@@ -234,7 +244,7 @@ impl<T> BoardPlugin<T> {
                     }
                     Tile::Empty => {
                         if safe_start_entity.is_none() {
-                            *safe_start_entity = covered_tile_entity
+                            *safe_start_entity = covered_tile_entity;
                         }
                     }
                 }
@@ -264,12 +274,6 @@ impl<T> BoardPlugin<T> {
                 alignment: TextAlignment {
                     vertical: VerticalAlign::Center,
                     horizontal: HorizontalAlign::Center,
-                },
-            },
-            text_2d_size: Text2dSize {
-                size: Size {
-                    width: size,
-                    height: size,
                 },
             },
             transform: Transform::from_xyz(0., 0., 1.),

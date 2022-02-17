@@ -21,8 +21,12 @@ pub fn mark_tiles(
                 commands.entity(entity).with_children(|parent| {
                     parent
                         .spawn_bundle(SpriteBundle {
-                            material: board_assets.flag_material.clone(),
-                            sprite: Sprite::new(Vec2::splat(board.tile_size)),
+                            texture: board_assets.flag_material.texture.clone(),
+                            sprite: Sprite {
+                                custom_size: Some(Vec2::splat(board.tile_size)),
+                                color: board_assets.flag_material.color,
+                                ..Default::default()
+                            },
                             transform: Transform::from_xyz(0., 0., 1.),
                             ..Default::default()
                         })

@@ -74,31 +74,16 @@ impl Board {
     }
 
     /// We retrieve the adjacent covered tile entities of `coord`
-    pub fn adjacent_covered_tiles(&self, coord: &Coordinates) -> Vec<Entity> {
-        let vec = self.tile_map.safe_square_at(coord);
-        let mut res = Vec::new();
-        for coord in vec.into_iter() {
-            if let Some(entity) = self.covered_tiles.get(&coord) {
-                res.push(*entity);
-            }
-        }
-        res
+    pub fn adjacent_covered_tiles(&self, coord: Coordinates) -> Vec<Entity> {
+        self.tile_map
+            .safe_square_at(coord)
+            .filter_map(|c| self.covered_tiles.get(&c))
+            .copied()
+            .collect()
     }
 
     /// Is the board complete
     pub fn is_completed(&self) -> bool {
-        let remaining_bombs = self
-            .tile_map
-            .bomb_count()
-            .saturating_sub(self.marked_tiles.len() as u16);
-        if remaining_bombs > 0 {
-            return false;
-        }
-        for coord in self.marked_tiles.iter() {
-            if !self.tile_map.is_bomb_at(coord) {
-                return false;
-            }
-        }
-        true
+        self.tile_map.bomb_count() as usize == self.covered_tiles.len()
     }
 }

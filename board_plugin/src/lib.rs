@@ -2,6 +2,7 @@ use crate::components::{Bomb, BombNeighbor, Coordinates, Uncover};
 use crate::events::*;
 use crate::resources::tile::Tile;
 use crate::tile_map::TileMap;
+use bevy::ecs::schedule::StateData;
 use bevy::log;
 use bevy::math::Vec3Swizzles;
 use bevy::prelude::*;
@@ -10,8 +11,6 @@ use bevy_inspector_egui::RegisterInspectable;
 pub use bounds::*;
 pub use resources::*;
 use std::collections::HashMap;
-use std::fmt::Debug;
-use std::hash::Hash;
 
 mod bounds;
 pub mod components;
@@ -23,7 +22,7 @@ pub struct BoardPlugin<T> {
     pub running_state: T,
 }
 
-impl<T: 'static + Debug + Clone + Eq + PartialEq + Hash + Send + Sync> Plugin for BoardPlugin<T> {
+impl<T: StateData> Plugin for BoardPlugin<T> {
     fn build(&self, app: &mut App) {
         // When the running states comes into the stack we load a board
         app.add_system_set(
@@ -173,7 +172,6 @@ impl<T> BoardPlugin<T> {
                     y: y as u16,
                 };
                 let mut cmd = parent.spawn();
-                let mut covered_tile_entity = None;
 
                 // Tile sprite
                 cmd.insert_bundle(SpriteBundle {
@@ -198,21 +196,22 @@ impl<T> BoardPlugin<T> {
                 .with_children(|parent| {
                     let mut child_cmd = parent.spawn();
                     // Tile cover
-                    covered_tile_entity = Some(
-                        child_cmd
-                            .insert_bundle(SpriteBundle {
-                                sprite: Sprite {
-                                    custom_size: Some(Vec2::splat(size - padding)),
-                                    color: board_assets.covered_tile_material.color,
-                                    ..Default::default()
-                                },
-                                transform: Transform::from_xyz(0., 0., 2.),
-                                texture: board_assets.covered_tile_material.texture.clone(),
+                    let entity = child_cmd
+                        .insert_bundle(SpriteBundle {
+                            sprite: Sprite {
+                                custom_size: Some(Vec2::splat(size - padding)),
+                                color: board_assets.covered_tile_material.color,
                                 ..Default::default()
-                            })
-                            .id(),
-                    );
-                    covered_tiles.insert(coordinates, covered_tile_entity.unwrap());
+                            },
+                            transform: Transform::from_xyz(0., 0., 2.),
+                            texture: board_assets.covered_tile_material.texture.clone(),
+                            ..Default::default()
+                        })
+                        .id();
+                    covered_tiles.insert(coordinates, entity);
+                    if safe_start_entity.is_none() && *tile == Tile::Empty {
+                        *safe_start_entity = Some(entity);
+                    }
                 });
                 match tile {
                     // If the tile is a bomb we add the matching component and a sprite child
@@ -242,11 +241,7 @@ impl<T> BoardPlugin<T> {
                             ));
                         });
                     }
-                    Tile::Empty => {
-                        if safe_start_entity.is_none() {
-                            *safe_start_entity = covered_tile_entity;
-                        }
-                    }
+                    Tile::Empty => (),
                 }
             }
         }

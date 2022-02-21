@@ -58,7 +58,7 @@ impl TileMap {
                 rng.gen_range(0..self.width) as usize,
                 rng.gen_range(0..self.height) as usize,
             );
-            if let Tile::Empty = self[y][x] {
+            if self[y][x] == Tile::Empty {
                 self[y][x] = Tile::Bomb;
                 remaining_bombs -= 1;
             }
@@ -84,10 +84,7 @@ impl TileMap {
         if coordinates.x >= self.width as u16 || coordinates.y >= self.height as u16 {
             return false;
         };
-        matches!(
-            self.map[coordinates.y as usize][coordinates.x as usize],
-            Tile::Bomb
-        )
+        self.map[coordinates.y as usize][coordinates.x as usize].is_bomb()
     }
 
     pub fn bomb_count_at(&self, coordinates: Coordinates) -> u8 {

@@ -17,12 +17,6 @@ pub enum AppState {
 
 fn main() {
     let mut app = App::new();
-    // Debug hierarchy inspector
-    #[cfg(feature = "debug")]
-    {
-        app.add_plugin(bevy_inspector_egui::WorldInspectorPlugin::new());
-        app.register_inspectable::<ButtonAction>();
-    }
     // Window setup
     app.insert_resource(WindowDescriptor {
         title: "Mine Sweeper!".to_string(),
@@ -36,9 +30,15 @@ fn main() {
         ..Default::default()
     })
     // Bevy default plugins
-    .add_plugins(DefaultPlugins)
+    .add_plugins(DefaultPlugins);
+    // Debug hierarchy inspector
+    #[cfg(feature = "debug")]
+    {
+        app.add_plugin(bevy_inspector_egui::WorldInspectorPlugin::new());
+        app.register_inspectable::<ButtonAction>();
+    }
     // Board plugin
-    .add_plugin(BoardPlugin {
+    app.add_plugin(BoardPlugin {
         running_state: AppState::InGame,
     })
     .add_state(AppState::Out)

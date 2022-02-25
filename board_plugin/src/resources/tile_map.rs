@@ -10,15 +10,15 @@ const SQUARE_COORDINATES: [(i8, i8); 8] = [
     // Bottom
     (0, -1),
     // Bottom right
-    (-1, 1),
+    (1, -1),
     // Left
     (-1, 0),
     // Right
-    (0, 1),
-    // Top Left
-    (1, -1),
-    // Top
     (1, 0),
+    // Top Left
+    (-1, 1),
+    // Top
+    (0, 1),
     // Top right
     (1, 1),
 ];
@@ -85,7 +85,7 @@ impl TileMap {
     #[inline]
     #[must_use]
     pub fn is_bomb_at(&self, coordinates: Coordinates) -> bool {
-        if coordinates.x >= self.width as u16 || coordinates.y >= self.height as u16 {
+        if coordinates.x >= self.width || coordinates.y >= self.height {
             return false;
         };
         self.map[coordinates.y as usize][coordinates.x as usize].is_bomb()

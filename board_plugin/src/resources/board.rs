@@ -83,6 +83,8 @@ impl Board {
     }
 
     /// Is the board complete
+    #[inline]
+    #[must_use]
     pub fn is_completed(&self) -> bool {
         self.tile_map.bomb_count() as usize == self.covered_tiles.len()
     }

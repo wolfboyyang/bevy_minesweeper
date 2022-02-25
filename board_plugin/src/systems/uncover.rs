@@ -30,18 +30,18 @@ pub fn uncover_tiles(
         }
         if board.is_completed() {
             log::info!("Board completed");
-            board_completed_event_wr.send(BoardCompletedEvent {});
+            board_completed_event_wr.send(BoardCompletedEvent);
         }
         if bomb.is_some() {
             log::info!("Boom !");
-            bomb_explosion_event_wr.send(BombExplosionEvent {});
+            bomb_explosion_event_wr.send(BombExplosionEvent);
         }
         // If the tile is empty..
         else if bomb_counter.is_none() {
             // .. We propagate the uncovering by adding the `Uncover` component to adjacent tiles
             // which will then be removed next frame
             for entity in board.adjacent_covered_tiles(*coords) {
-                commands.entity(entity).insert(Uncover {});
+                commands.entity(entity).insert(Uncover);
             }
         }
     }

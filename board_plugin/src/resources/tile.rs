@@ -14,6 +14,8 @@ pub enum Tile {
 
 impl Tile {
     /// Is the tile a bomb?
+    #[inline]
+    #[must_use]
     pub const fn is_bomb(&self) -> bool {
         matches!(self, Self::Bomb)
     }

@@ -34,6 +34,8 @@ pub struct TileMap {
 
 impl TileMap {
     /// Generates an empty map
+    #[inline]
+    #[must_use]
     pub fn empty(width: u16, height: u16) -> Self {
         let map = (0..height)
             .into_iter()
@@ -80,6 +82,8 @@ impl TileMap {
         }
     }
 
+    #[inline]
+    #[must_use]
     pub fn is_bomb_at(&self, coordinates: Coordinates) -> bool {
         if coordinates.x >= self.width as u16 || coordinates.y >= self.height as u16 {
             return false;
@@ -87,6 +91,8 @@ impl TileMap {
         self.map[coordinates.y as usize][coordinates.x as usize].is_bomb()
     }
 
+    #[inline]
+    #[must_use]
     pub fn bomb_count_at(&self, coordinates: Coordinates) -> u8 {
         if self.is_bomb_at(coordinates) {
             return 0;
@@ -98,6 +104,7 @@ impl TileMap {
         res as u8
     }
 
+    #[inline]
     pub fn safe_square_at(&self, coordinates: Coordinates) -> impl Iterator<Item = Coordinates> {
         SQUARE_COORDINATES
             .iter()
@@ -124,16 +131,22 @@ impl TileMap {
     }
 
     // Getter for `width`
+    #[inline]
+    #[must_use]
     pub fn width(&self) -> u16 {
         self.width
     }
 
     // Getter for `height`
+    #[inline]
+    #[must_use]
     pub fn height(&self) -> u16 {
         self.height
     }
 
     // Getter for `bomb_count`
+    #[inline]
+    #[must_use]
     pub fn bomb_count(&self) -> u16 {
         self.bomb_count
     }

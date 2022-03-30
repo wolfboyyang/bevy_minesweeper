@@ -6,11 +6,11 @@ use bevy::ecs::schedule::StateData;
 use bevy::log;
 use bevy::math::Vec3Swizzles;
 use bevy::prelude::*;
+use bevy::utils::{AHashExt, HashMap};
 #[cfg(feature = "debug")]
 use bevy_inspector_egui::RegisterInspectable;
 pub use bounds::*;
 pub use resources::*;
-use std::collections::HashMap;
 
 mod bounds;
 pub mod components;
@@ -49,6 +49,7 @@ impl<T: StateData> Plugin for BoardPlugin<T> {
         .add_event::<BoardCompletedEvent>();
         #[cfg(feature = "debug")]
         {
+            // registering custom component to be able to edit it in inspector
             app.register_inspectable::<Bomb>()
                 .register_inspectable::<Coordinates>()
                 .register_inspectable::<BombNeighbor>()
@@ -63,26 +64,25 @@ impl<T> BoardPlugin<T> {
     pub fn create_board(
         mut commands: Commands,
         board_options: Option<Res<BoardOptions>>,
-        board_assets: Res<BoardAssets>,
         windows: Res<Windows>,
+        board_assets: Res<BoardAssets>,
     ) {
-        let options = match board_options {
-            None => BoardOptions::default(), // If no options is set we use the default one
-            Some(o) => o.clone(),
-        };
-        // Tilemap generation
+        let options = board_options.map_or(
+            BoardOptions::default(), /* If no options is set we use the default one */
+            |o| o.clone(),
+        );
+        // TileMap generation
         let mut tile_map = TileMap::empty(options.map_size.0, options.map_size.1);
         tile_map.set_bombs(options.bomb_count);
         #[cfg(feature = "debug")]
-        // Tilemap debugging
+        // TileMap debugging
         log::info!("{}", tile_map.console_output());
 
         // Setup
-
         // We define the size of our tiles in world space
         let tile_size = match options.tile_size {
             TileSize::Fixed(v) => v,
-            TileSize::Adaptive { min, max } => Self::adaptative_tile_size(
+            TileSize::Adaptive { min, max } => Self::adaptive_tile_size(
                 windows.get_primary().unwrap(),
                 (min, max),
                 (tile_map.width(), tile_map.height()),
@@ -125,6 +125,7 @@ impl<T> BoardPlugin<T> {
                         ..Default::default()
                     })
                     .insert(Name::new("Background"));
+                // Tiles
                 Self::spawn_tiles(
                     parent,
                     &tile_map,
@@ -207,6 +208,7 @@ impl<T> BoardPlugin<T> {
                             texture: board_assets.covered_tile_material.texture.clone(),
                             ..Default::default()
                         })
+                        .insert(Name::new("Tile Cover"))
                         .id();
                     covered_tiles.insert(coordinates, entity);
                     if safe_start_entity.is_none() && *tile == Tile::Empty {
@@ -277,7 +279,7 @@ impl<T> BoardPlugin<T> {
     }
 
     /// Computes a tile size that matches the window according to the tile map size
-    fn adaptative_tile_size(
+    fn adaptive_tile_size(
         window: &Window,
         (min, max): (f32, f32),
         (width, height): (u16, u16),

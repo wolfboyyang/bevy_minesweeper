@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 pub enum TileSize {
     /// Fixed tile size
     Fixed(f32),
-    /// Window adaptative tile size
+    /// Window adaptive tile size
     Adaptive { min: f32, max: f32 },
 }
 

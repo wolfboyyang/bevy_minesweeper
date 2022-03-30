@@ -14,7 +14,7 @@ pub fn uncover_tiles(
 ) {
     // We iterate through tile covers to uncover
     for (entity, parent) in children.iter() {
-        // we destroy the entity
+        // we destroy the tile cover entity
         commands.entity(entity).despawn_recursive();
         let (coords, bomb, bomb_counter) = match parents.get(parent.0) {
             Ok(v) => v,
@@ -23,7 +23,7 @@ pub fn uncover_tiles(
                 continue;
             }
         };
-        // We remove the entity from the board map
+        // We remove the entity from the board covered tile map
         match board.try_uncover_tile(coords) {
             None => log::debug!("Tried to uncover an already uncovered tile"),
             Some(e) => log::debug!("Uncovered tile {} (entity: {:?})", coords, e),
@@ -54,7 +54,7 @@ pub fn trigger_event_handler(
 ) {
     for trigger_event in tile_trigger_evr.iter() {
         if let Some(entity) = board.tile_to_uncover(&trigger_event.0) {
-            commands.entity(*entity).insert(Uncover {});
+            commands.entity(*entity).insert(Uncover);
         }
     }
 }

@@ -4,6 +4,16 @@ use rand::{thread_rng, Rng};
 use std::ops::{Deref, DerefMut};
 
 /// Delta coordinates for all 8 square neighbors
+/// Bottom left | Bottom | Bottom right
+/// Left        |        | Right
+/// Top Left    |  Top   | Top right
+/// *--------*-------*-------*
+/// | -1, 1  | 0, 1  | 1, 1  |
+/// |--------|-------|-------|
+/// | -1, 0  | tile  | 1, 0  |
+/// |--------|-------|-------|
+/// | -1, -1 | 0, -1 | 1, -1 |
+/// *--------*-------*-------*
 const SQUARE_COORDINATES: [(i8, i8); 8] = [
     // Bottom left
     (-1, -1),
@@ -37,10 +47,7 @@ impl TileMap {
     #[inline]
     #[must_use]
     pub fn empty(width: u16, height: u16) -> Self {
-        let map = (0..height)
-            .into_iter()
-            .map(|_| (0..width).into_iter().map(|_| Tile::Empty).collect())
-            .collect();
+        let map = vec![vec![Tile::Empty; width as usize]; height as usize];
         Self {
             bomb_count: 0,
             height,
@@ -85,10 +92,8 @@ impl TileMap {
     #[inline]
     #[must_use]
     pub fn is_bomb_at(&self, coordinates: Coordinates) -> bool {
-        if coordinates.x >= self.width || coordinates.y >= self.height {
-            return false;
-        };
-        self.map[coordinates.y as usize][coordinates.x as usize].is_bomb()
+        let in_board = coordinates.x < self.width && coordinates.y < self.height;
+        in_board && self.map[coordinates.y as usize][coordinates.x as usize].is_bomb()
     }
 
     #[inline]

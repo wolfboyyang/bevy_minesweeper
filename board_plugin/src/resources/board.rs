@@ -3,7 +3,7 @@ use crate::tile_map::TileMap;
 use crate::Bounds2;
 use bevy::log;
 use bevy::prelude::*;
-use std::collections::HashMap;
+use bevy::utils::HashMap;
 
 #[derive(Debug)]
 pub struct Board {
@@ -18,12 +18,15 @@ pub struct Board {
 impl Board {
     /// Translates a mouse position to board coordinates
     pub fn mouse_position(&self, window: &Window, position: Vec2) -> Option<Coordinates> {
+        // Window to world space
         let window_size = Vec2::new(window.width(), window.height());
         let position = position - window_size / 2.;
 
+        // Bounds check
         if !self.bounds.in_bounds(position) {
             return None;
         }
+        // World space to board space
         let coordinates = position - self.bounds.position;
         Some(Coordinates {
             x: (coordinates.x / self.tile_size) as u16,

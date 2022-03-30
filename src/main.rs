@@ -9,11 +9,17 @@ use crate::buttons::{ButtonAction, ButtonColors};
 use bevy_inspector_egui::RegisterInspectable;
 use board_plugin::{BoardAssets, BoardOptions, BoardPlugin, BoardPosition, SpriteMaterial};
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum AppState {
     InGame,
+    Pause,
     Out,
 }
+
+#[derive(Debug, Copy, Clone)]
+pub struct StateEvent(pub AppState);
+#[derive(Debug, Copy, Clone)]
+pub struct ReloadEvent;
 
 fn main() {
     let mut app = App::new();
@@ -48,7 +54,12 @@ fn main() {
     // UI
     .add_startup_system(setup_ui)
     // State handling
+    .add_event::<StateEvent>()
+    .add_event::<ReloadEvent>()
     .add_system(input_handler)
+    .add_system(key_handler)
+    .add_system(state_handler)
+    .add_system(reload_handler)
     // Run the app
     .run();
 }
@@ -113,7 +124,7 @@ fn input_handler(
         (&Interaction, &ButtonAction, &mut UiColor),
         (Changed<Interaction>, With<Button>),
     >,
-    mut state: ResMut<State<AppState>>,
+    mut state_wr: EventWriter<StateEvent>,
 ) {
     for (interaction, action, mut color) in interaction_query.iter_mut() {
         match *interaction {
@@ -122,17 +133,15 @@ fn input_handler(
                 match action {
                     ButtonAction::Clear => {
                         log::debug!("clearing detected");
-                        if state.current() == &AppState::InGame {
-                            log::info!("clearing game");
-                            state.set(AppState::Out).unwrap();
-                        }
+                        state_wr.send(StateEvent(AppState::Out))
                     }
                     ButtonAction::Generate => {
                         log::debug!("loading detected");
-                        if state.current() == &AppState::Out {
-                            log::info!("loading game");
-                            state.set(AppState::InGame).unwrap();
-                        }
+                        state_wr.send(StateEvent(AppState::InGame))
+                    }
+                    ButtonAction::Pause => {
+                        log::debug!("pausing detected");
+                        state_wr.send(StateEvent(AppState::Pause))
                     }
                 }
             }
@@ -177,8 +186,15 @@ fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
                 parent,
                 "GENERATE",
                 button_materials.normal.into(),
-                font,
+                font.clone(),
                 ButtonAction::Generate,
+            );
+            setup_single_menu(
+                parent,
+                "PAUSE",
+                button_materials.normal.into(),
+                font,
+                ButtonAction::Pause,
             );
         });
     commands.insert_resource(button_materials);
@@ -226,4 +242,84 @@ fn setup_single_menu(
                 ..Default::default()
             });
         });
+}
+
+fn key_handler(keys: Res<Input<KeyCode>>, mut state_wr: EventWriter<StateEvent>) {
+    if keys.just_pressed(KeyCode::C) {
+        log::debug!("clearing detected");
+        state_wr.send(StateEvent(AppState::Out))
+    } else if keys.just_pressed(KeyCode::Escape) {
+        log::debug!("pausing detected");
+        state_wr.send(StateEvent(AppState::Pause))
+    } else if keys.just_pressed(KeyCode::G) {
+        log::debug!("loading detected");
+        state_wr.send(StateEvent(AppState::InGame))
+    }
+}
+
+pub fn reload_handler(
+    mut reload_evr: EventReader<ReloadEvent>,
+    mut state_wr: EventWriter<StateEvent>,
+) {
+    for _ in reload_evr.iter() {
+        log::info!("reload");
+        state_wr.send(StateEvent(AppState::InGame));
+    }
+}
+
+pub fn state_handler(
+    mut state: ResMut<State<AppState>>,
+    mut state_evr: EventReader<StateEvent>,
+    mut reload_wr: EventWriter<ReloadEvent>,
+) {
+    for state_event in state_evr.iter() {
+        match state_event.0 {
+            AppState::InGame => {
+                log::debug!("loading game");
+                match state.current() {
+                    AppState::InGame => {
+                        log::info!("generate new game when in game");
+                        state.set(AppState::Out).unwrap();
+                        reload_wr.send(ReloadEvent);
+                    }
+                    AppState::Pause => {
+                        log::info!("generate game when pausing");
+                        state.overwrite_replace(AppState::InGame).unwrap();
+                    }
+                    AppState::Out => {
+                        state.set(AppState::InGame).unwrap();
+                        log::info!("loading game");
+                    }
+                }
+            }
+            AppState::Out => {
+                log::debug!("clearing game");
+                match state.current() {
+                    AppState::InGame => {
+                        log::info!("clearing game");
+                        state.set(AppState::Out).unwrap();
+                    }
+                    AppState::Pause => {
+                        log::info!("clearing game when pausing");
+                        state.overwrite_replace(AppState::Out).unwrap();
+                    }
+                    _ => {}
+                }
+            }
+            AppState::Pause => {
+                log::debug!("pause or resume game");
+                match state.current() {
+                    AppState::InGame => {
+                        log::info!("pausing game");
+                        state.push(AppState::Pause).unwrap();
+                    }
+                    AppState::Pause => {
+                        log::info!("resuming game");
+                        state.pop().unwrap();
+                    }
+                    _ => {}
+                }
+            }
+        }
+    }
 }

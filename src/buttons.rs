@@ -6,6 +6,7 @@ use bevy::prelude::*;
 pub enum ButtonAction {
     Clear,
     Generate,
+    Pause,
 }
 
 #[derive(Debug)]

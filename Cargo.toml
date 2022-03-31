@@ -24,10 +24,10 @@ default-features = false
 features = ["render", "bevy_winit", "png"]
 
 # Dependencies for native only.
-#[target.'cfg(not(target_arch = "wasm32"))'.dependencies.bevy]
-#version = "0.6"
-#default-features = false
-#features = ["x11"]
+[target.'cfg(all(not(target_arch = "wasm32"), target_os = "linux"))'.dependencies.bevy]
+version = "0.6"
+default-features = false
+features = ["x11"]
 
 [workspace]
 members = [

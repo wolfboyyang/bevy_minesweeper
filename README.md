@@ -1,6 +1,6 @@
 # Minesweeper Tutorial
 
-[![pipeline status](https://gitlab.com/qonfucius/minesweeper-tutorial/badges/master/pipeline.svg)](https://gitlab.com/qonfucius/minesweeper-tutorial/commits/master)
+[![CI](https://github.com/wolfboyyang/bevy_minesweeper/actions/workflows/ci.yml/badge.svg)](https://github.com/wolfboyyang/bevy_minesweeper/actions/workflows/ci.yml)
 
 Source code for the [Bevy Minesweeper Tutorial](https://dev.to/qongzi/bevy-minesweeper-introduction-4l7f) by Félix de Maneville:
 - [Introduction](https://dev.to/qongzi/bevy-minesweeper-introduction-4l7f)
